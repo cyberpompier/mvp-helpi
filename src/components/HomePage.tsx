@@ -30,21 +30,21 @@
 
     const carouselItems = [
       {
-        src: '/guepes.JPEG',
+        src: 'https://i.postimg.cc/c4Fk6NdW/guepes.jpg',
         alt: 'Image de guepe',
         title: 'Guepes',
         description: 'Destruction de nuisibles',
         path: '/services/guepes',
       },
       {
-        src: '/serrurier.JPEG',
+        src: 'https://i.postimg.cc/8zsK6nC6/serrurier.jpg',
         alt: 'Image de PlayStation',
         title: 'Serrurier',
         description: 'Pour tout probleme d\'ouverture de porte',
         path: '/services/serrurier',
       },
       {
-        src: '/taxi.JPEG',
+        src: 'https://i.postimg.cc/PrXFtqsK/taxi.jpg',
         alt: 'Image de VSAV',
         title: 'Taxi',
         description: 'Trouver un taxi à proximité',
@@ -63,7 +63,7 @@
         <div className="flex flex-col items-center min-h-screen bg-gray-900 text-white p-4">
           {/* Logo en haut de la page */}
           <div className="w-full flex justify-center py-8">
-            <img src="/logo.png" alt="App Logo" className="w-24 h-24" />
+            <img src="https://i.postimg.cc/SKMgZ2CQ/logo.jpg" alt="App Logo" className="w-24 h-24" />
           </div>
 
           {/* Message de bienvenue */}

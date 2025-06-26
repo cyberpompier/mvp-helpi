@@ -24,7 +24,7 @@
           <p className="text-lg text-gray-300 mb-8 text-center">
             Informations détaillées sur la destruction des nids de guêpes et la prévention.
           </p>
-          <img src="/guepes.JPEG" alt="Image de guepe" className="w-full max-w-md rounded-lg shadow-lg mb-8" />
+          <img src="https://i.postimg.cc/c4Fk6NdW/guepes.jpg" alt="Image de guepe" className="w-full max-w-md rounded-lg shadow-lg mb-8" />
           <Button onClick={() => navigate('/home')} className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
             Retour à l'accueil
           </Button>

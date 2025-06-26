@@ -11,6 +11,8 @@
       2. Composants
         - Utilise `useState` et `useEffect` de React pour gérer l'état de l'animation et les délais.
         - Utilise des classes Tailwind CSS pour le style et les transitions.
+      3. Changements
+        - Le logo utilise désormais une URL externe au lieu d'un chemin local.
     */}
     import React, { useState, useEffect } from 'react';
 
@@ -69,7 +71,11 @@
               logoVisible && animationStarted ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <img src="/logo.png" alt="Logo" className="w-32 h-32 animate-pulse" />
+            <img
+              src="https://i.postimg.cc/XvzqvGJg/logo.jpg" // Remplacez cette URL par l'URL de votre logo
+              alt="Logo"
+              className="w-32 h-32 animate-pulse"
+            />
           </div>
         </div>
       );
