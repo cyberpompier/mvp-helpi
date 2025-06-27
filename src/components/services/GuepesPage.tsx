@@ -17,7 +17,6 @@
         - Ajout d'un champ de saisie pour prendre une photo avec l'appareil.
         - Affichage des sélections faites par l'utilisateur, y compris la photo prise.
         - Bouton de retour pour naviguer vers la page d'accueil.
-        - **Extraction et affichage des coordonnées GPS de la photo (si disponibles) et simulation de l'adresse postale.**
       2. Composants
         - Utilise `useNavigate` de `react-router-dom` pour la navigation.
         - Utilise `useState` de React pour gérer l'état de la sélection et de l'image.
@@ -25,7 +24,6 @@
         - Utilise des classes Tailwind CSS pour le style.
       3. Correction
         - Correction du texte du label pour le sélecteur de localisation du nid.
-        - **Correction de l'importation de `exif-js` pour résoudre l'erreur de résolution de module en utilisant un script global.**
     */}
     import React, { useState } from 'react';
     import { useNavigate } from 'react-router-dom';
@@ -37,13 +35,6 @@
       SelectTrigger,
       SelectValue,
     } from '@/components/ui/select';
-
-    // Déclaration globale pour exif-js, car il est chargé via un script dans index.html
-    declare global {
-      interface Window {
-        EXIF: any; // Le type exact est fourni par @types/exif-js
-      }
-    }
 
     interface NuisibleInfo {
       title: string;
@@ -57,8 +48,7 @@
       const [nestLocation, setNestLocation] = useState<string>('');
       const [nestHeight, setNestHeight] = useState<string>('');
       const [nestLocationDetail, setNestLocationDetail] = useState<string>('');
-      const [photo, setPhoto] = useState<string | null>(null);
-      const [gpsAddress, setGpsAddress] = useState<string | null>(null);
+      const [photo, setPhoto] = useState<string | null>(null); // Nouvel état pour la photo
 
       const nuisibleData: { [key: string]: NuisibleInfo } = {
         guepes: {
@@ -89,16 +79,6 @@
       };
 
       const currentNuisible = nuisibleData[selectedNuisible];
-
-      // Fonction utilitaire pour convertir les coordonnées DMS en degrés décimaux
-      const convertDMSToDD = (dms: number[], ref: string): number => {
-        if (!dms || dms.length !== 3) return 0;
-        let dd = dms[0] + dms[1] / 60 + dms[2] / 3600;
-        if (ref === 'S' || ref === 'W') {
-          dd = dd * -1;
-        }
-        return dd;
-      };
 
       const handleSelectChange = (value: string) => {
         setSelectedNuisible(value);
@@ -131,31 +111,8 @@
             setPhoto(reader.result as string);
           };
           reader.readAsDataURL(file);
-
-          // Accéder à EXIF directement depuis l'objet global window
-          if (window.EXIF && typeof window.EXIF.getData === 'function') {
-            window.EXIF.getData(file, function(this: any) {
-              const lat = window.EXIF.getTag(this, "GPSLatitude");
-              const lon = window.EXIF.getTag(this, "GPSLongitude");
-              const latRef = window.EXIF.getTag(this, "GPSLatitudeRef");
-              const lonRef = window.EXIF.getTag(this, "GPSLongitudeRef");
-
-              if (lat && lon && latRef && lonRef) {
-                const latitude = convertDMSToDD(lat, latRef);
-                const longitude = convertDMSToDD(lon, lonRef);
-
-                // Pour cette démonstration, nous allons simuler l'adresse ou afficher les coordonnées brutes.
-                setGpsAddress(`Coordonnées GPS: Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`);
-              } else {
-                setGpsAddress("Aucune coordonnée GPS trouvée dans la photo.");
-              }
-            });
-          } else {
-            setGpsAddress("La bibliothèque EXIF n'est pas chargée ou est invalide.");
-          }
         } else {
           setPhoto(null);
-          setGpsAddress(null);
         }
       };
 
@@ -314,12 +271,7 @@
                   <img src={photo} alt="Photo du nid" className="mt-2 w-full max-w-xs rounded-lg shadow-md mx-auto" />
                 </li>
               )}
-              {gpsAddress && (
-                <li>
-                  Adresse (GPS) : <span className="font-bold">{gpsAddress}</span>
-                </li>
-              )}
-              {!selectedNuisible && !nestLocation && !nestHeight && !nestLocationDetail && !photo && !gpsAddress && (
+              {!selectedNuisible && !nestLocation && !nestHeight && !nestLocationDetail && !photo && (
                 <li>Aucune sélection effectuée.</li>
               )}
             </ul>
