@@ -17,11 +17,22 @@
         - Ajout d'un champ de saisie pour prendre une photo avec l'appareil.
         - Affichage des sélections faites par l'utilisateur, y compris la photo prise.
         - Bouton de retour pour naviguer vers la page d'accueil.
+        - **Ajout de fonctionnalités de partage :**
+          - Bouton "Copier les sélections" pour copier les données formatées dans le presse-papiers.
+          - Bouton "Envoyer par SMS" pour ouvrir l'application de messagerie avec les données pré-remplies.
+          - Bouton "Envoyer par E-mail" pour ouvrir l'application de messagerie avec les données pré-remplies.
+          - Utilisation du hook `useToast` pour les notifications de copie.
+          - **Amélioration du partage de photos :**
+            - La photo est maintenant uploadée sur Supabase Storage.
+            - Le lien public de la photo est inclus dans les informations partagées.
       2. Composants
         - Utilise `useNavigate` de `react-router-dom` pour la navigation.
         - Utilise `useState` de React pour gérer l'état de la sélection et de l'image.
         - Utilise les composants `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem` de `@/components/ui/select`.
+        - Utilise les composants `Button` de `@/components/ui/button`.
+        - Utilise le hook `useToast` de `@/hooks/use-toast`.
         - Utilise des classes Tailwind CSS pour le style.
+        - Utilise le client Supabase pour l'upload de photos.
       3. Correction
         - Correction du texte du label pour le sélecteur de localisation du nid.
     */}
@@ -35,6 +46,8 @@
       SelectTrigger,
       SelectValue,
     } from '@/components/ui/select';
+    import { useToast } from '@/hooks/use-toast';
+    import { supabase } from '@/lib/supabase'; // Importez supabase
 
     interface NuisibleInfo {
       title: string;
@@ -44,11 +57,13 @@
 
     const GuepesPage: React.FC = () => {
       const navigate = useNavigate();
+      const { toast } = useToast();
       const [selectedNuisible, setSelectedNuisible] = useState<string>('guepes');
       const [nestLocation, setNestLocation] = useState<string>('');
       const [nestHeight, setNestHeight] = useState<string>('');
       const [nestLocationDetail, setNestLocationDetail] = useState<string>('');
-      const [photo, setPhoto] = useState<string | null>(null); // Nouvel état pour la photo
+      const [photo, setPhoto] = useState<string | null>(null); // Pour l'aperçu local (Base64)
+      const [photoUrl, setPhotoUrl] = useState<string | null>(null); // Pour l'URL Supabase
 
       const nuisibleData: { [key: string]: NuisibleInfo } = {
         guepes: {
@@ -103,17 +118,111 @@
         setNestLocationDetail(value);
       };
 
-      const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+          // Pour l'aperçu local immédiat
           const reader = new FileReader();
           reader.onloadend = () => {
             setPhoto(reader.result as string);
           };
           reader.readAsDataURL(file);
+
+          // Upload vers Supabase Storage
+          const filePath = `public/${Date.now()}_${file.name}`; // Nom de fichier unique
+          const { data, error } = await supabase.storage
+            .from('nuisible-photos')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (error) {
+            console.error('Erreur lors de l\'upload de la photo:', error);
+            toast({
+              title: 'Erreur d\'upload',
+              description: 'Impossible d\'uploader la photo. Veuillez réessayer.',
+              variant: 'destructive',
+            });
+            setPhotoUrl(null);
+          } else {
+            // Récupérer l'URL publique de la photo uploadée
+            const { data: publicUrlData } = supabase.storage
+              .from('nuisible-photos')
+              .getPublicUrl(data.path);
+
+            if (publicUrlData) {
+              setPhotoUrl(publicUrlData.publicUrl);
+              toast({
+                title: 'Photo uploadée !',
+                description: 'La photo a été uploadée avec succès.',
+              });
+            } else {
+              console.error('Impossible de récupérer l\'URL publique de la photo.');
+              toast({
+                title: 'Erreur',
+                description: 'Impossible de récupérer l\'URL de la photo.',
+                variant: 'destructive',
+              });
+              setPhotoUrl(null);
+            }
+          }
         } else {
           setPhoto(null);
+          setPhotoUrl(null);
         }
+      };
+
+      const formatSelectionsForShare = () => {
+        let text = "Informations sur le nid de nuisibles :\n\n";
+        if (selectedNuisible) {
+          text += `Type de nuisible : ${nuisibleData[selectedNuisible]?.title || selectedNuisible}\n`;
+        }
+        if (nestLocation) {
+          text += `Localisation du nid : ${nestLocation === 'interieur' ? 'Intérieur de l\'habitation' : 'Extérieur de l\'habitation'}\n`;
+        }
+        if (nestHeight) {
+          text += `Hauteur estimée : ${nestHeight}\n`;
+        }
+        if (nestLocationDetail) {
+          text += `Détail de la localisation : ${nestLocationDetail}\n`;
+        }
+        if (photoUrl) {
+          text += `Lien vers la photo du nid : ${photoUrl}\n`;
+        } else if (photo) {
+          text += `Photo du nid : (prise, mais non uploadée ou lien non disponible)\n`;
+        }
+        return text;
+      };
+
+      const handleCopySelections = async () => {
+        const textToCopy = formatSelectionsForShare();
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          toast({
+            title: 'Copié !',
+            description: 'Les informations ont été copiées dans le presse-papiers.',
+          });
+        } catch (err) {
+          console.error('Failed to copy: ', err);
+          toast({
+            title: 'Erreur de copie',
+            description: 'Impossible de copier les informations.',
+            variant: 'destructive',
+          });
+        }
+      };
+
+      const handleShareSMS = () => {
+        const textToShare = formatSelectionsForShare();
+        const encodedText = encodeURIComponent(textToShare);
+        window.location.href = `sms:?body=${encodedText}`;
+      };
+
+      const handleShareEmail = () => {
+        const subject = encodeURIComponent("Demande d'intervention - Nuisibles");
+        const body = encodeURIComponent(formatSelectionsForShare());
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
       };
 
       return (
@@ -265,16 +374,32 @@
                   Détail de la localisation : <span className="font-bold">{nestLocationDetail}</span>
                 </li>
               )}
-              {photo && (
+              {photoUrl ? (
+                <li className="mt-4">
+                  Photo du nid : <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Voir la photo</a>
+                  <img src={photo} alt="Aperçu du nid" className="mt-2 w-full max-w-xs rounded-lg shadow-md mx-auto" />
+                </li>
+              ) : photo && (
                 <li className="mt-4">
                   Photo du nid :
-                  <img src={photo} alt="Photo du nid" className="mt-2 w-full max-w-xs rounded-lg shadow-md mx-auto" />
+                  <img src={photo} alt="Aperçu du nid" className="mt-2 w-full max-w-xs rounded-lg shadow-md mx-auto" />
                 </li>
               )}
               {!selectedNuisible && !nestLocation && !nestHeight && !nestLocationDetail && !photo && (
                 <li>Aucune sélection effectuée.</li>
               )}
             </ul>
+            <div className="flex flex-col space-y-2 mt-4">
+              <Button onClick={handleCopySelections} className="bg-green-600 hover:bg-green-700 text-white">
+                Copier les sélections
+              </Button>
+              <Button onClick={handleShareSMS} className="bg-purple-600 hover:bg-purple-700 text-white">
+                Envoyer par SMS
+              </Button>
+              <Button onClick={handleShareEmail} className="bg-orange-600 hover:bg-orange-700 text-white">
+                Envoyer par E-mail
+              </Button>
+            </div>
           </div>
 
           <Button onClick={() => navigate('/home')} className="mt-8 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
