@@ -1,61 +1,35 @@
 {/*
-      # Composant App
+      # Composant App (Rétablissement du routage original)
 
       Ce fichier est le composant racine de l'application.
-      Il gère l'affichage conditionnel de la page d'atterrissage et de la page d'accueil
-      en utilisant `react-router-dom` pour la navigation.
+      Après avoir confirmé que `SerrurierPage` fonctionne seule,
+      nous rétablissons le routage original pour que l'application
+      démarre avec le `LandingPageWrapper`.
 
-      1. Nouvelle fonctionnalité
-        - Intégration de `react-router-dom` pour la gestion des routes.
-        - Affichage de `LandingPage` au démarrage, puis redirection vers `HomePage` après l'animation.
-        - Ajout de routes spécifiques pour les services (Guêpes, Serrurier, Taxi).
-        - Ajout d'une route pour la page de test de connexion à la base de données.
-      2. Composants
-        - Utilise `BrowserRouter`, `Routes`, et `Route` de `react-router-dom`.
-        - Gère l'état `showLanding` pour contrôler l'affichage de la page d'atterrissage.
-      3. Changements
-        - Ajout d'un léger délai (`setTimeout`) avant la navigation vers `/home`
-          pour permettre à la `LandingPage` de se démonter complètement et éviter les conflits DOM.
-        - Importation et ajout des nouveaux composants de page de service aux routes.
-        - Importation et ajout du composant `DatabaseTestPage` aux routes.
+      1. Changements
+        - La route racine (`/`) pointe de nouveau vers `LandingPageWrapper`.
+        - Les autres routes restent inchangées.
     */}
-    import React, { useState } from 'react';
-    import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-    import LandingPage from './components/LandingPage';
+    import React from 'react';
+    import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+    import LandingPageWrapper from './components/LandingPageWrapper';
     import HomePage from './components/HomePage';
     import GuepesPage from './components/services/GuepesPage';
     import SerrurierPage from './components/services/SerrurierPage';
     import TaxiPage from './components/services/TaxiPage';
-    import DatabaseTestPage from './components/DatabaseTestPage'; // Importez la nouvelle page
-
-    // Composant Wrapper pour gérer la logique de la LandingPage et la redirection
-    const LandingPageWrapper: React.FC = () => {
-      const navigate = useNavigate();
-      const [showLanding, setShowLanding] = useState(true);
-
-      const handleAnimationComplete = () => {
-        setShowLanding(false); // Déclenche le démontage de LandingPage
-        // Ajoute un léger délai pour s'assurer que le démontage est terminé avant la navigation
-        setTimeout(() => {
-          navigate('/home'); // Redirige vers la page d'accueil
-        }, 50); // Délai de 50ms
-      };
-
-      return showLanding ? (
-        <LandingPage onAnimationComplete={handleAnimationComplete} />
-      ) : null;
-    };
+    import DatabaseTestPage from './components/DatabaseTestPage';
 
     const App: React.FC = () => {
       return (
         <Router>
           <Routes>
+            {/* Rétablissement de la route principale vers LandingPageWrapper */}
             <Route path="/" element={<LandingPageWrapper />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/services/guepes" element={<GuepesPage />} />
             <Route path="/services/serrurier" element={<SerrurierPage />} />
             <Route path="/services/taxi" element={<TaxiPage />} />
-            <Route path="/test-db" element={<DatabaseTestPage />} /> {/* Nouvelle route */}
+            <Route path="/test-db" element={<DatabaseTestPage />} />
           </Routes>
         </Router>
       );

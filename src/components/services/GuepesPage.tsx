@@ -25,6 +25,14 @@
           - **Amélioration du partage de photos :**
             - La photo est maintenant uploadée sur Supabase Storage.
             - Le lien public de la photo est inclus dans les informations partagées.
+        - **Ajout de la géolocalisation :**
+          - Bouton "Me géolocaliser" pour obtenir les coordonnées GPS de l'utilisateur.
+          - Affichage de la latitude et de la longitude dans la section "Vos sélections".
+          - Inclusion des coordonnées dans les informations partagées.
+          - Gestion des erreurs de géolocalisation (permission refusée, position non disponible).
+        - **Amélioration de l'affichage des coordonnées GPS :**
+          - Les coordonnées GPS sont désormais affichées sous forme de lien cliquable vers Google Maps dans la section "Vos sélections".
+          - Ce lien est également inclus dans le texte partagé.
       2. Composants
         - Utilise `useNavigate` de `react-router-dom` pour la navigation.
         - Utilise `useState` de React pour gérer l'état de la sélection et de l'image.
@@ -64,6 +72,10 @@
       const [nestLocationDetail, setNestLocationDetail] = useState<string>('');
       const [photo, setPhoto] = useState<string | null>(null); // Pour l'aperçu local (Base64)
       const [photoUrl, setPhotoUrl] = useState<string | null>(null); // Pour l'URL Supabase
+      const [latitude, setLatitude] = useState<number | null>(null);
+      const [longitude, setLongitude] = useState<number | null>(null);
+      const [geolocationError, setGeolocationError] = useState<string | null>(null);
+
 
       const nuisibleData: { [key: string]: NuisibleInfo } = {
         guepes: {
@@ -173,6 +185,54 @@
         }
       };
 
+      const handleGeolocate = () => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setLatitude(position.coords.latitude);
+              setLongitude(position.coords.longitude);
+              setGeolocationError(null);
+              toast({
+                title: 'Géolocalisation réussie !',
+                description: `Lat: ${position.coords.latitude.toFixed(4)}, Long: ${position.coords.longitude.toFixed(4)}`,
+              });
+            },
+            (error) => {
+              let errorMessage = 'Erreur de géolocalisation : ';
+              switch (error.code) {
+                case error.PERMISSION_DENIED:
+                  errorMessage += 'L\'utilisateur a refusé la demande de géolocalisation.';
+                  break;
+                case error.POSITION_UNAVAILABLE:
+                  errorMessage += 'Les informations de localisation ne sont pas disponibles.';
+                  break;
+                case error.TIMEOUT:
+                  errorMessage += 'La demande de l\'utilisateur pour obtenir la localisation a expiré.';
+                  break;
+                default:
+                  errorMessage += 'Une erreur inconnue est survenue.';
+                  break;
+              }
+              setGeolocationError(errorMessage);
+              setLatitude(null);
+              setLongitude(null);
+              toast({
+                title: 'Erreur de géolocalisation',
+                description: errorMessage,
+                variant: 'destructive',
+              });
+            }
+          );
+        } else {
+          setGeolocationError('La géolocalisation n\'est pas supportée par ce navigateur.');
+          toast({
+            title: 'Erreur',
+            description: 'La géolocalisation n\'est pas supportée par ce navigateur.',
+            variant: 'destructive',
+          });
+        }
+      };
+
       const formatSelectionsForShare = () => {
         let text = "Informations sur le nid de nuisibles :\n\n";
         if (selectedNuisible) {
@@ -186,6 +246,12 @@
         }
         if (nestLocationDetail) {
           text += `Détail de la localisation : ${nestLocationDetail}\n`;
+        }
+        if (latitude !== null && longitude !== null) {
+          const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+          text += `Coordonnées GPS : Latitude ${latitude.toFixed(6)}, Longitude ${longitude.toFixed(6)} (${googleMapsUrl})\n`;
+        } else if (geolocationError) {
+          text += `Géolocalisation : ${geolocationError}\n`;
         }
         if (photoUrl) {
           text += `Lien vers la photo du nid : ${photoUrl}\n`;
@@ -351,6 +417,13 @@
             />
           </div>
 
+          {/* Bouton de géolocalisation */}
+          <div className="w-full max-w-xs mb-8">
+            <Button onClick={handleGeolocate} className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-md">
+              Me géolocaliser
+            </Button>
+          </div>
+
           <div className="mt-8 p-4 bg-gray-800 rounded-lg shadow-md w-full max-w-md text-left">
             <h3 className="text-xl font-semibold mb-4 text-center">Vos sélections :</h3>
             <ul className="list-disc list-inside text-lg text-gray-300">
@@ -374,6 +447,24 @@
                   Détail de la localisation : <span className="font-bold">{nestLocationDetail}</span>
                 </li>
               )}
+              {latitude !== null && longitude !== null && (
+                <li>
+                  Coordonnées GPS :{' '}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-blue-400 underline"
+                  >
+                    Lat: {latitude.toFixed(6)}, Long: {longitude.toFixed(6)}
+                  </a>
+                </li>
+              )}
+              {geolocationError && (
+                <li className="text-red-400">
+                  Erreur de géolocalisation : <span className="font-bold">{geolocationError}</span>
+                </li>
+              )}
               {photoUrl ? (
                 <li className="mt-4">
                   Photo du nid : <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Voir la photo</a>
@@ -385,7 +476,7 @@
                   <img src={photo} alt="Aperçu du nid" className="mt-2 w-full max-w-xs rounded-lg shadow-md mx-auto" />
                 </li>
               )}
-              {!selectedNuisible && !nestLocation && !nestHeight && !nestLocationDetail && !photo && (
+              {!selectedNuisible && !nestLocation && !nestHeight && !nestLocationDetail && !photo && !latitude && !longitude && !geolocationError && (
                 <li>Aucune sélection effectuée.</li>
               )}
             </ul>

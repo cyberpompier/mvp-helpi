@@ -1,26 +1,17 @@
 {/*
-      # Composant SerrurierPage
+      # Composant SerrurierPage (Mise à jour du bouton d'urgence)
 
-      Ce fichier contient le composant React pour la page dédiée au service "Serrurier".
-      Cette mise à jour ajoute une liste de choix pour différents scénarios de serrurerie.
+      Ce fichier est un composant React pour la page dédiée au service "Serrurier".
+      Il permet à l'utilisateur de sélectionner le type d'intervention de serrurerie nécessaire.
 
       1. Nouvelle fonctionnalité
-        - Page dédiée pour le service "Serrurier".
-        - Ajout d'une liste déroulante (`Select`) pour choisir le type d'intervention.
-        - Affichage de l'option sélectionnée.
-        - Bouton de retour pour naviguer vers la page d'accueil.
+        - Le bouton "18/112" déclenche désormais un appel téléphonique vers le numéro 18.
       2. Composants
         - Utilise `useNavigate` de `react-router-dom` pour la navigation.
         - Utilise `useState` de React pour gérer l'état de la sélection.
+        - Utilise le composant `Button` de `@/components/ui/button`.
         - Utilise les composants `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem` de `@/components/ui/select`.
         - Utilise des classes Tailwind CSS pour le style.
-      3. Correction
-        - Ajout de la prop `value` au composant `Select` pour le rendre contrôlé,
-          permettant ainsi à `SelectValue` d'afficher correctement l'option sélectionnée.
-        - Mise à jour du texte de l'option "Ouverture de porte" pour afficher "appeler un serrurier"
-          dans le `Select` et dans le résumé de l'option sélectionnée.
-        - Remplacement du texte "appeler un serrurier" par un bouton "Serrurier" lorsque l'option "Ouverture de porte" est sélectionnée.
-        - Remplacement des commentaires pour les autres options par un bouton rouge "Appeler le 18 / 112".
     */}
     import React, { useState } from 'react';
     import { useNavigate } from 'react-router-dom';
@@ -35,64 +26,56 @@
 
     const SerrurierPage: React.FC = () => {
       const navigate = useNavigate();
-      const [selectedOption, setSelectedOption] = useState<string | null>(null);
+      const [selectedIntervention, setSelectedIntervention] = useState<string | null>(null);
 
-      const handleSelectChange = (value: string) => {
-        setSelectedOption(value);
+      const handleInterventionChange = (value: string) => {
+        setSelectedIntervention(value);
+      };
+
+      const handleCallEmergency = () => {
+        // Utilise le protocole tel: pour initier un appel téléphonique
+        window.location.href = 'tel:18';
       };
 
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-          <h1 className="text-4xl font-bold mb-8 text-center">Service : Serrurier</h1>
+          <h1 className="text-4xl font-bold mb-8 text-center">Service Serrurier</h1>
           <p className="text-lg text-gray-300 mb-8 text-center">
-            Informations sur nos services de serrurerie, dépannage d'urgence et installation.
+            Sélectionnez le type d'intervention dont vous avez besoin :
           </p>
-          <img src="https://i.postimg.cc/8zsK6nC6/serrurier.jpg" alt="Image de serrurier" className="w-full max-w-md rounded-lg shadow-lg mb-8" />
 
           <div className="w-full max-w-xs mb-8">
-            <Select onValueChange={handleSelectChange} value={selectedOption || undefined}>
+            <Select onValueChange={handleInterventionChange} value={selectedIntervention || ''}>
               <SelectTrigger className="w-full">
-                {/* Affiche le texte de l'option sélectionnée ou le placeholder */}
-                <SelectValue placeholder="Sélectionnez le type d'intervention" />
+                <SelectValue placeholder="Sélectionnez votre intervention" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ouverture_porte">Ouverture de porte</SelectItem>
-                {/* Option pour une ouverture de porte avec présence d'enfants ou autres personnes */}
-                <SelectItem value="ouverture_porte_enfants">Ouverture de porte avec enfant/autres</SelectItem>
-                {/* Option pour une ouverture de porte en cas d'urgence (aliment sur le feu) */}
-                <SelectItem value="ouverture_porte_aliment">Ouverture de porte avec aliment sur le feu</SelectItem>
+                <SelectItem value="ouverture_porte_enfants">Ouverture de porte avec enfants/autres</SelectItem>
+                <SelectItem value="ouverture_porte_aliments">Ouverture de porte avec aliments sur le feu</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {selectedOption && (
-            <div className="mb-8 text-center">
-              <p className="text-xl font-semibold">Option sélectionnée :</p>
-              <p className="text-lg text-gray-300">
-                {selectedOption === 'ouverture_porte' && (
-                  <Button
-                    onClick={() => console.log('Bouton Serrurier cliqué !')}
-                    className="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
-                  >
-                    Serrurier
-                  </Button>
-                )}
-                {(selectedOption === 'ouverture_porte_enfants' || selectedOption === 'ouverture_porte_aliment') && (
-                  <Button
-                    onClick={() => {
-                      console.log('Appel au 18 / 112 simulé !');
-                      window.location.href = 'tel:18'; // Tente de composer le numéro sur les appareils mobiles
-                    }}
-                    className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
-                  >
-                    Appeler le 18 / 112
-                  </Button>
-                )}
-              </p>
+          {selectedIntervention && (
+            <div className="mb-8">
+              {selectedIntervention === 'ouverture_porte' && (
+                <Button className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-md font-bold">
+                  Serrurier
+                </Button>
+              )}
+              {(selectedIntervention === 'ouverture_porte_enfants' || selectedIntervention === 'ouverture_porte_aliments') && (
+                <Button
+                  onClick={handleCallEmergency} // Ajout de l'appel à la fonction d'urgence
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold"
+                >
+                  18/112
+                </Button>
+              )}
             </div>
           )}
 
-          <Button onClick={() => navigate('/home')} className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
+          <Button onClick={() => navigate('/home')} className="mt-8 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
             Retour à l'accueil
           </Button>
         </div>
