@@ -31,6 +31,10 @@ const SerrurierPage: React.FC = () => {
 
   const handleOptionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedOption(event.target.value);
+    // Réinitialiser les artisans et l'erreur de localisation si l'option change
+    setArtisans([]);
+    setLocationError(null);
+    setUserLocation(null);
   };
 
   const handleCall = (phoneNumber: string) => {
@@ -40,6 +44,7 @@ const SerrurierPage: React.FC = () => {
   const getGeolocation = () => {
     if (navigator.geolocation) {
       setLocationError(null);
+      setLoading(true); // Mettre en chargement pendant la géolocalisation
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
@@ -47,16 +52,19 @@ const SerrurierPage: React.FC = () => {
             longitude: position.coords.longitude,
           });
           console.log('Géolocalisation obtenue:', position.coords.latitude, position.coords.longitude);
+          setLoading(false); // Fin du chargement
         },
         (err) => {
           console.error('Erreur de géolocalisation:', err);
           setLocationError(`Impossible d'obtenir la géolocalisation: ${err.message}. Veuillez autoriser l'accès à votre position.`);
           setUserLocation(null);
+          setLoading(false); // Fin du chargement même en cas d'erreur
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       setLocationError('La géolocalisation n\'est pas supportée par votre navigateur.');
+      setLoading(false); // Fin du chargement
     }
   };
 
@@ -65,7 +73,6 @@ const SerrurierPage: React.FC = () => {
     setError(null);
     console.log('Début de la récupération des artisans...');
     try {
-      // Sélectionner toutes les colonnes, y compris phone_number
       const { data, error } = await supabase
         .from('artisans')
         .select('id, profession, nom, adresse, photo, note, phone_number');
@@ -104,6 +111,7 @@ const SerrurierPage: React.FC = () => {
           });
           setArtisans(artisansWithDistance);
         } else {
+          // Si userLocation n'est pas disponible, ne pas calculer la distance
           setArtisans(data);
         }
       }
@@ -118,8 +126,12 @@ const SerrurierPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (selectedOption === 'ouverture_porte') {
+    // Déclencher la récupération des artisans uniquement si l'option est 'ouverture_porte' ET que la géolocalisation est disponible
+    if (selectedOption === 'ouverture_porte' && userLocation) {
       fetchArtisans();
+    } else if (selectedOption === 'ouverture_porte' && !userLocation) {
+      // Si l'option est sélectionnée mais pas de géolocalisation, vider la liste des artisans
+      setArtisans([]);
     }
   }, [userLocation, selectedOption]);
 
@@ -149,8 +161,9 @@ const SerrurierPage: React.FC = () => {
           <button
             onClick={getGeolocation}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-lg"
+            disabled={loading}
           >
-            Me géolocaliser
+            {loading ? 'Géolocalisation en cours...' : 'Me géolocaliser'}
           </button>
           {locationError && <p className="text-red-400 text-sm italic mt-2 text-center">{locationError}</p>}
           {userLocation && (
@@ -158,13 +171,11 @@ const SerrurierPage: React.FC = () => {
               Votre position: {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
             </p>
           )}
-          <button
-            onClick={fetchArtisans}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-lg"
-            disabled={loading}
-          >
-            {loading ? 'Chargement...' : 'Afficher les serruriers'}
-          </button>
+          {!userLocation && !locationError && !loading && (
+            <p className="text-gray-400 text-center mt-4 text-lg">
+              Veuillez vous géolocaliser pour afficher les serruriers disponibles.
+            </p>
+          )}
         </div>
       )}
 
@@ -181,7 +192,7 @@ const SerrurierPage: React.FC = () => {
 
       {error && <p className="text-red-400 text-center mt-4 text-lg">{error}</p>}
 
-      {selectedOption === 'ouverture_porte' && artisans.length > 0 && (
+      {selectedOption === 'ouverture_porte' && userLocation && artisans.length > 0 && (
         <div className="mt-8 w-full max-w-md">
           <h3 className="text-2xl font-semibold text-white mb-6 text-center">Artisans disponibles:</h3>
           <ul className="space-y-6">
@@ -223,7 +234,7 @@ const SerrurierPage: React.FC = () => {
         </div>
       )}
 
-      {selectedOption === 'ouverture_porte' && !loading && !error && artisans.length === 0 && (
+      {selectedOption === 'ouverture_porte' && userLocation && !loading && !error && artisans.length === 0 && (
         <p className="text-center text-gray-300 mt-4 text-lg">Aucun serrurier trouvé pour le moment.</p>
       )}
 
