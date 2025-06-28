@@ -2,11 +2,13 @@
       # Composant GuepesPage
 
       Ce fichier contient le composant React pour la page dédiée au service "Guepes".
-      Cette mise à jour ajoute une liste de choix pour différents nuisibles (guêpes, frelons, etc.)
-      et affiche une image correspondante à la sélection, ainsi que des informations détaillées
-      spécifiques à chaque type de nuisible.
+      Cette mise à jour corrige l'affichage initial de la liste de choix des nuisibles
+      pour qu'elle n'ait aucune sélection par défaut au lieu d'afficher "Guêpes".
 
-      1. Nouvelle fonctionnalité
+      1. Correction
+        - Initialisation de l'état `selectedNuisible` à une chaîne vide (`''`)
+          pour que le `Select` affiche son `placeholder` au chargement de la page.
+      2. Nouvelle fonctionnalité
         - Ajout d'une liste déroulante (`Select`) pour choisir le type de nuisible.
         - Affichage dynamique d'une image basée sur la sélection de la liste déroulante.
         - Affichage de descriptions détaillées et spécifiques pour chaque nuisible sélectionné.
@@ -33,7 +35,7 @@
         - **Amélioration de l'affichage des coordonnées GPS :**
           - Les coordonnées GPS sont désormais affichées sous forme de lien cliquable vers Google Maps dans la section "Vos sélections".
           - Ce lien est également inclus dans le texte partagé.
-      2. Composants
+      3. Composants
         - Utilise `useNavigate` de `react-router-dom` pour la navigation.
         - Utilise `useState` de React pour gérer l'état de la sélection et de l'image.
         - Utilise les composants `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem` de `@/components/ui/select`.
@@ -41,8 +43,6 @@
         - Utilise le hook `useToast` de `@/hooks/use-toast`.
         - Utilise des classes Tailwind CSS pour le style.
         - Utilise le client Supabase pour l'upload de photos.
-      3. Correction
-        - Correction du texte du label pour le sélecteur de localisation du nid.
     */}
     import React, { useState } from 'react';
     import { useNavigate } from 'react-router-dom';
@@ -66,7 +66,7 @@
     const GuepesPage: React.FC = () => {
       const navigate = useNavigate();
       const { toast } = useToast();
-      const [selectedNuisible, setSelectedNuisible] = useState<string>('guepes');
+      const [selectedNuisible, setSelectedNuisible] = useState<string>(''); // Initialisé à une chaîne vide
       const [nestLocation, setNestLocation] = useState<string>('');
       const [nestHeight, setNestHeight] = useState<string>('');
       const [nestLocationDetail, setNestLocationDetail] = useState<string>('');
@@ -105,6 +105,8 @@
         },
       };
 
+      // currentNuisible sera undefined si selectedNuisible est une chaîne vide,
+      // ce qui empêchera l'affichage de l'image et de la description.
       const currentNuisible = nuisibleData[selectedNuisible];
 
       const handleSelectChange = (value: string) => {
@@ -299,7 +301,7 @@
           </p>
 
           <div className="w-full max-w-xs mb-8">
-            <Select onValueChange={handleSelectChange} defaultValue={selectedNuisible}>
+            <Select onValueChange={handleSelectChange} value={selectedNuisible}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez un nuisible" />
               </SelectTrigger>
@@ -313,7 +315,8 @@
             </Select>
           </div>
 
-          {currentNuisible && (
+          {/* Affiche les informations du nuisible seulement si un nuisible est sélectionné */}
+          {selectedNuisible && currentNuisible && (
             <div className="mb-8 text-center max-w-2xl">
               <img
                 src={currentNuisible.image}
