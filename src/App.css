@@ -1,6 +1,19 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+/*
+    # Mise à jour de App.css
+
+    Ce fichier contient les styles spécifiques au composant `App`.
+    Pour que l'application occupe la totalité de l'espace de l'écran,
+    j'ai supprimé les propriétés `max-width` et `margin: 0 auto`
+    qui centraient le contenu et laissaient des espaces blancs sur les côtés.
+
+    1. Modifications
+      - Suppression de `max-width: 1280px;` pour permettre à l'application de s'étendre sur toute la largeur disponible.
+      - Suppression de `margin: 0 auto;` car il n'est plus nécessaire sans `max-width` et peut créer des marges indésirables.
+      - Le `padding: 2rem;` est conservé pour assurer un espacement interne du contenu.
+  */
+  #root {
+    /* max-width: 1280px; */ /* Supprimé pour occuper toute la largeur */
+    /* margin: 0 auto; */ /* Supprimé car plus nécessaire sans max-width */
+    padding: 2rem;
+    text-align: center;
+  }

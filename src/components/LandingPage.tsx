@@ -35,12 +35,12 @@
         const logoTimer = setTimeout(() => {
           setLogoVisible(false); // Cache le logo
           setDoorsOpen(true); // Déclenche l'ouverture des portes
-        }, 9000);
+        }, 5000);
 
         // Une fois les portes ouvertes, l'animation est complète
         const completeTimer = setTimeout(() => {
           onAnimationComplete();
-        }, 9500); // 5000ms (logo) + 1500ms (transition des portes)
+        }, 6500); // 5000ms (logo) + 1500ms (transition des portes)
 
         return () => {
           clearTimeout(startTimer);
